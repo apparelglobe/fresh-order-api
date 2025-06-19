@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Update Order</title>
+</head>
+<body>
+  <h2>Update Order</h2>
+  <form id="updateForm">
+    <label>
+      Order ID:
+      <input type="number" id="orderId" required />
+    </label><br /><br />
+    <label>
+      Status:
+      <input type="text" id="status" required />
+    </label><br /><br />
+    <label>
+      Total Amount:
+      <input type="text" id="totalAmount" required />
+    </label><br /><br />
+    <button type="submit">Update Order</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('updateForm');
+    const resultDiv = document.getElementById('result');
+    const baseUrl = 'https://fresh-order-api.onrender.com/orders';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('orderId').value;
+      const status = document.getElementById('status').value;
+      const totalAmount = document.getElementById('totalAmount').value;
+
+      try {
+        const response = await fetch(`${baseUrl}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, total_amount: totalAmount })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.innerHTML = `<p style="color: green;">Order updated successfully!<br/>Updated Order: <pre>${JSON.stringify(data.order, null, 2)}</pre></p>`;
+        } else {
+          resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color: red;">Network error: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
