@@ -37,7 +37,7 @@ app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+// Start the server and listen on all network interfaces for Render
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
