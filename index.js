@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/database');
-const { getAmazonAccessToken } = require('./amazon');
+const { getAmazonAccessToken, getAmazonOrders } = require('./amazon');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +14,15 @@ if (!PORT) {
   process.exit(1);
 }
 
+// Simple API key auth middleware
+function apiKeyAuth(req, res, next) {
+  const apiKey = req.header('x-api-key');
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
+  }
+  next();
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -21,7 +30,8 @@ app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
-app.get('/orders', async (req, res) => {
+// Protect routes with API key auth
+app.get('/orders', apiKeyAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
     res.json(result.rows);
@@ -31,7 +41,7 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-app.get('/orders/:id', async (req, res) => {
+app.get('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -49,7 +59,7 @@ app.get('/orders/:id', async (req, res) => {
   }
 });
 
-app.post('/orders', async (req, res) => {
+app.post('/orders', apiKeyAuth, async (req, res) => {
   const { order_number, customer_name, status, total_amount } = req.body;
 
   if (!order_number || !customer_name || !status || !total_amount) {
@@ -71,7 +81,7 @@ app.post('/orders', async (req, res) => {
   }
 });
 
-app.put('/orders/:id', async (req, res) => {
+app.put('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
   const { order_number, customer_name, status, total_amount } = req.body;
 
@@ -126,7 +136,7 @@ app.put('/orders/:id', async (req, res) => {
   }
 });
 
-app.delete('/orders/:id', async (req, res) => {
+app.delete('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -143,13 +153,25 @@ app.delete('/orders/:id', async (req, res) => {
   }
 });
 
-app.get('/amazon-token', async (req, res) => {
+// Amazon token endpoint (optional to protect)
+app.get('/amazon-token', apiKeyAuth, async (req, res) => {
   try {
     const token = await getAmazonAccessToken();
     res.json({ access_token: token });
   } catch (err) {
     console.error('Error getting Amazon token:', err.message);
     res.status(500).json({ error: 'Failed to get Amazon access token' });
+  }
+});
+
+// New Amazon orders endpoint
+app.get('/amazon-orders', apiKeyAuth, async (req, res) => {
+  try {
+    const data = await getAmazonOrders();
+    res.json(data);
+  } catch (error) {
+    console.error('Failed to fetch Amazon orders:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Amazon orders' });
   }
 });
 
