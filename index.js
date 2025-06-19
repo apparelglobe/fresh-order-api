@@ -31,6 +31,29 @@ app.get('/orders', async (req, res) => {
   }
 });
 
+// New POST route to create orders
+app.post('/orders', async (req, res) => {
+  const { order_id, customer_name, status, total_amount } = req.body;
+
+  if (!order_id || !customer_name || !status || !total_amount) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const insertQuery = `
+      INSERT INTO orders (order_id, customer_name, status, total_amount, created_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING *;
+    `;
+
+    const result = await pool.query(insertQuery, [order_id, customer_name, status, total_amount]);
+    res.status(201).json({ message: 'Order created', order: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating order:', error.message);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
 app.get('/amazon-token', async (req, res) => {
   try {
     const token = await getAmazonAccessToken();
