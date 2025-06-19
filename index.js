@@ -37,11 +37,45 @@ app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
-// Orders routes protected by API key auth
+// Updated /orders route with pagination and filtering
 app.get('/orders', apiKeyAuth, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const statusFilter = req.query.status; // optional filter
+
+    const offset = (page - 1) * limit;
+
+    let baseQuery = 'SELECT * FROM orders';
+    const params = [];
+    if (statusFilter) {
+      params.push(statusFilter);
+      baseQuery += ` WHERE status = $${params.length}`;
+    }
+
+    baseQuery += ' ORDER BY created_at DESC';
+    params.push(limit, offset);
+    baseQuery += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
+    const result = await pool.query(baseQuery, params);
+
+    // Get total count for pagination info
+    let countQuery = 'SELECT COUNT(*) FROM orders';
+    if (statusFilter) {
+      countQuery += ` WHERE status = $1`;
+    }
+    const countResult = await pool.query(countQuery, statusFilter ? [statusFilter] : []);
+
+    const total = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      orders: result.rows,
+    });
   } catch (error) {
     console.error('Error fetching orders:', error.message);
     res.status(500).json({ error: 'Failed to fetch orders' });
