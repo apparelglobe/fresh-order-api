@@ -31,7 +31,6 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-// Fetch single order by ID
 app.get('/orders/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -70,6 +69,59 @@ app.post('/orders', async (req, res) => {
   } catch (error) {
     console.error('Error creating order:', error.message);
     res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+// Update order by ID
+app.put('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { order_number, customer_name, status, total_amount } = req.body;
+
+  // Build dynamic update query parts
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  if (order_number !== undefined) {
+    fields.push(`order_number = $${idx++}`);
+    values.push(order_number);
+  }
+  if (customer_name !== undefined) {
+    fields.push(`customer_name = $${idx++}`);
+    values.push(customer_name);
+  }
+  if (status !== undefined) {
+    fields.push(`status = $${idx++}`);
+    values.push(status);
+  }
+  if (total_amount !== undefined) {
+    fields.push(`total_amount = $${idx++}`);
+    values.push(total_amount);
+  }
+
+  if (fields.length === 0) {
+    return res.status(400).json({ error: 'No fields to update provided' });
+  }
+
+  const query = `
+    UPDATE orders
+    SET ${fields.join(', ')}
+    WHERE id = $${idx}
+    RETURNING *;
+  `;
+  values.push(id);
+
+  try {
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({ message: 'Order updated', order: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating order:', error.message);
+    res.status(500).json({ error: 'Failed to update order' });
   }
 });
 
