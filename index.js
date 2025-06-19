@@ -72,12 +72,11 @@ app.post('/orders', async (req, res) => {
   }
 });
 
-// Update order by ID
+// Updated PUT route with debug logs
 app.put('/orders/:id', async (req, res) => {
   const { id } = req.params;
   const { order_number, customer_name, status, total_amount } = req.body;
 
-  // Build dynamic update query parts
   const fields = [];
   const values = [];
   let idx = 1;
@@ -111,6 +110,9 @@ app.put('/orders/:id', async (req, res) => {
   `;
   values.push(id);
 
+  console.log('Update query:', query);
+  console.log('Values:', values);
+
   try {
     const result = await pool.query(query, values);
 
@@ -118,6 +120,7 @@ app.put('/orders/:id', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    console.log('Update result:', result.rows[0]);
     res.json({ message: 'Order updated', order: result.rows[0] });
   } catch (error) {
     console.error('Error updating order:', error.message);
