@@ -37,7 +37,8 @@ app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
-// Log before starting the server
+// Debug logs for port info
+console.log('Env PORT:', process.env.PORT);
 console.log('Starting server on port:', PORT);
 
 app.listen(PORT, '0.0.0.0', () => {
