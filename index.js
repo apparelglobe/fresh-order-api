@@ -6,8 +6,13 @@ require('dotenv').config();
 
 const app = express();
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT;
 const HOST = '0.0.0.0';
+
+if (!PORT) {
+  console.error('❌ Error: PORT environment variable not set.');
+  process.exit(1);
+}
 
 app.use(cors());
 app.use(express.json());
@@ -36,7 +41,7 @@ app.get('/amazon-token', async (req, res) => {
   }
 });
 
-console.log('Trying to listen on port', PORT, 'and host', HOST);
+console.log('Port from environment:', process.env.PORT);
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on port ${PORT} and host ${HOST}`);
