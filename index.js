@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/database');
+const { getAmazonAccessToken } = require('./amazon');
 require('dotenv').config();
 
 const app = express();
@@ -9,7 +10,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Route to fetch all orders
+// Route to fetch all orders from the database
 app.get('/orders', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
@@ -20,10 +21,23 @@ app.get('/orders', async (req, res) => {
   }
 });
 
+// Route to get Amazon access token using refresh token
+app.get('/amazon-token', async (req, res) => {
+  try {
+    const token = await getAmazonAccessToken();
+    res.json({ access_token: token });
+  } catch (err) {
+    console.error('Error getting Amazon token:', err.message);
+    res.status(500).json({ error: 'Failed to get Amazon access token' });
+  }
+});
+
+// Simple root route to check if API is running
 app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
