@@ -9,6 +9,9 @@ const app = express();
 const PORT = process.env.PORT;
 const HOST = '0.0.0.0';
 
+// Debug: Print the API_KEY from environment
+console.log('API_KEY from env:', process.env.API_KEY);
+
 // Read API key from env variables
 const API_KEY = process.env.API_KEY;
 
@@ -17,9 +20,10 @@ if (!PORT) {
   process.exit(1);
 }
 
-// Middleware to check API key
+// Middleware to check API key with debug log
 function apiKeyAuth(req, res, next) {
   const apiKey = req.header('x-api-key');
+  console.log('API key received:', apiKey);
   if (!apiKey || apiKey !== API_KEY) {
     return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
   }
