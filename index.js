@@ -41,7 +41,7 @@ app.get('/amazon-token', async (req, res) => {
   }
 });
 
-console.log('Port from environment:', process.env.PORT);
+console.log('Port from environment:', PORT);
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on port ${PORT} and host ${HOST}`);
