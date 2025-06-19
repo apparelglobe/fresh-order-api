@@ -31,22 +31,22 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-// New POST route to create orders
+// Updated POST route using order_number instead of order_id
 app.post('/orders', async (req, res) => {
-  const { order_id, customer_name, status, total_amount } = req.body;
+  const { order_number, customer_name, status, total_amount } = req.body;
 
-  if (!order_id || !customer_name || !status || !total_amount) {
+  if (!order_number || !customer_name || !status || !total_amount) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
     const insertQuery = `
-      INSERT INTO orders (order_id, customer_name, status, total_amount, created_at)
+      INSERT INTO orders (order_number, customer_name, status, total_amount, created_at)
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING *;
     `;
 
-    const result = await pool.query(insertQuery, [order_id, customer_name, status, total_amount]);
+    const result = await pool.query(insertQuery, [order_number, customer_name, status, total_amount]);
     res.status(201).json({ message: 'Order created', order: result.rows[0] });
   } catch (error) {
     console.error('Error creating order:', error.message);
