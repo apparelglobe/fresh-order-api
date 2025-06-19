@@ -6,24 +6,19 @@ require('dotenv').config();
 
 const app = express();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0';
-
-// Debug: Print the API_KEY from environment
-console.log('API_KEY from env:', process.env.API_KEY);
 
 // Read API key from env variables
 const API_KEY = process.env.API_KEY;
 
-if (!PORT) {
-  console.error('❌ Error: PORT environment variable not set.');
+if (!API_KEY) {
+  console.error('❌ Error: API_KEY environment variable not set.');
   process.exit(1);
 }
 
-// Middleware to check API key with debug log
 function apiKeyAuth(req, res, next) {
   const apiKey = req.header('x-api-key');
-  console.log('API key received:', apiKey);
   if (!apiKey || apiKey !== API_KEY) {
     return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
   }
@@ -37,7 +32,7 @@ app.get('/', (req, res) => {
   res.send('✅ Fresh Order API is running');
 });
 
-// Orders routes protected by API key auth
+// Get all orders
 app.get('/orders', apiKeyAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
@@ -48,6 +43,7 @@ app.get('/orders', apiKeyAuth, async (req, res) => {
   }
 });
 
+// Get single order by ID
 app.get('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
   try {
@@ -62,6 +58,7 @@ app.get('/orders/:id', apiKeyAuth, async (req, res) => {
   }
 });
 
+// Create new order
 app.post('/orders', apiKeyAuth, async (req, res) => {
   const { order_number, customer_name, status, total_amount } = req.body;
   if (!order_number || !customer_name || !status || !total_amount) {
@@ -81,6 +78,7 @@ app.post('/orders', apiKeyAuth, async (req, res) => {
   }
 });
 
+// Update order by ID
 app.put('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
   const { order_number, customer_name, status, total_amount } = req.body;
@@ -118,15 +116,11 @@ app.put('/orders/:id', apiKeyAuth, async (req, res) => {
   `;
   values.push(id);
 
-  console.log('Update query:', query);
-  console.log('Values:', values);
-
   try {
     const result = await pool.query(query, values);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    console.log('Update result:', result.rows[0]);
     res.json({ message: 'Order updated', order: result.rows[0] });
   } catch (error) {
     console.error('Error updating order:', error.message);
@@ -134,6 +128,7 @@ app.put('/orders/:id', apiKeyAuth, async (req, res) => {
   }
 });
 
+// Delete order by ID
 app.delete('/orders/:id', apiKeyAuth, async (req, res) => {
   const { id } = req.params;
   try {
@@ -148,7 +143,7 @@ app.delete('/orders/:id', apiKeyAuth, async (req, res) => {
   }
 });
 
-// Amazon token endpoint
+// Amazon API: Get access token
 app.get('/amazon-token', apiKeyAuth, async (req, res) => {
   try {
     const token = await getAmazonAccessToken();
@@ -159,7 +154,7 @@ app.get('/amazon-token', apiKeyAuth, async (req, res) => {
   }
 });
 
-// Amazon orders endpoint with live data
+// Amazon API: Get orders
 app.get('/amazon-orders', apiKeyAuth, async (req, res) => {
   try {
     const data = await getAmazonOrders();
@@ -170,8 +165,6 @@ app.get('/amazon-orders', apiKeyAuth, async (req, res) => {
   }
 });
 
-console.log('Port from environment:', PORT);
-
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 Server running on port ${PORT} and host ${HOST}`);
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
 });
