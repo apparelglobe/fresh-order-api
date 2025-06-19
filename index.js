@@ -49,7 +49,6 @@ app.get('/orders/:id', async (req, res) => {
   }
 });
 
-// Create new order
 app.post('/orders', async (req, res) => {
   const { order_number, customer_name, status, total_amount } = req.body;
 
@@ -72,7 +71,6 @@ app.post('/orders', async (req, res) => {
   }
 });
 
-// Updated PUT route with debug logs
 app.put('/orders/:id', async (req, res) => {
   const { id } = req.params;
   const { order_number, customer_name, status, total_amount } = req.body;
@@ -125,6 +123,23 @@ app.put('/orders/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating order:', error.message);
     res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+app.delete('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM orders WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({ message: 'Order deleted', order: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting order:', error.message);
+    res.status(500).json({ error: 'Failed to delete order' });
   }
 });
 
